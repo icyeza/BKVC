@@ -63,5 +63,31 @@ class CardResource(Resource):
             print(e)
             abort(500, message="Internal server error. Please try again later.")
 
+    @jwt_required()
+    def get(self):
+        try:
+            user_id = get_jwt_identity()["UserId"]
+            cards = Card.query.filter_by(userId=user_id).all()
+            if not cards:
+                return {"message": "No cards found for this user."}, 404
+
+            cards_data = []
+            for card in cards:
+                card_data = {
+                    "card_number": card.card_number,
+                    "card_name": card.card_name,
+                    "expire_date": str(card.expire_date),
+                    "limit_money": card.limit_money,
+                    "card_type": card.card_type,
+                    "card_status": card.card_status,
+                    "balance": card.balance,
+                }
+                cards_data.append(card_data)
+
+            return {"cards": cards_data}, 200
+        except Exception as e:
+            print(e)
+            abort(500, message="Internal server error. Please try again later.")
+
 
 Card_api.add_resource(CardResource, "/")

@@ -15,9 +15,7 @@ class SignupResource(Resource):
 
     def post(self):
         """function creates Api for signing up the user"""
-
-        try:
-            required_fields = [
+        required_fields = [
                 "email",
                 "name",
                 "password",
@@ -26,9 +24,11 @@ class SignupResource(Resource):
                 "phonenumber",
                 "username",
             ]
-            for field in required_fields:
+        for field in required_fields:
                 if field not in request.json:
                     abort(400, message=f"Field '{field}' is required.")
+        try: 
+
 
             email = request.json["email"]
             name = request.json["name"]
