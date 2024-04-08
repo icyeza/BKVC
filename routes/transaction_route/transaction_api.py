@@ -18,16 +18,18 @@ class transaction_resource(Resource):
     @jwt_required()
     def post(self):
 
-        try:
-            required_fields = [
+        required_fields = [
                 "transaction_amount",
                 "cardreceiver_number",
                 "cardsender_number",
             ]
-            transaction_id = transaction_generator
+            #transaction_id = transaction_generator
             for field in required_fields:
                 if field not in request.json:
                     abort(400, message=f"Field '{field}' is required.")
+
+        try:
+            
 
             transaction_id = request.json["transaction_id"]
             transaction_date = request.json["transaction_date"]
