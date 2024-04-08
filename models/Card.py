@@ -14,7 +14,7 @@ class Card(db.Model):
     card_type = db.Column(db.String)
     card_status = db.Column(db.String)
     balance = db.Column(db.Float)
-    # card_transaction = db.relationship('Transaction', backref='card', lazy=True)
+    Transactions = db.relationship("Transaction", backref="card", lazy=True)
 
     def __repr__(self) -> str:
         return f"<Card {self.card_number}>"

@@ -1,4 +1,4 @@
-"""from models import db
+from models import db
 
 
 class Transaction(db.Model):
@@ -17,9 +17,9 @@ class Transaction(db.Model):
         "Card", foreign_keys=[card_sender_number], backref="sent_transactions"
     )
 
-    transaction_confirmation = db.relationship(
+    """transaction_confirmation = db.relationship(
         "transaction_confirmation", backref="transaction_confirmation", lazy=True
-    )
+    )"""
 
     def __repr__(self) -> str:
-        return f"<transaction_confirmation {self.transaction_confirmation_Id}> """
+        return f"<transaction_confirmation {self.transaction_confirmation_Id}>"

@@ -15,17 +15,16 @@ transaction_api = Api(transaction_Blueprint)
 class transaction_resource(Resource):
     '"""Class docstrings go here."""'
 
+    @jwt_required()
     def post(self):
 
         try:
             required_fields = [
-                "transaction_id",
-                "transaction_date",
                 "transaction_amount",
-                "transaction_status",
                 "cardreceiver_number",
                 "cardsender_number",
             ]
+            transaction_id = transaction_generator
             for field in required_fields:
                 if field not in request.json:
                     abort(400, message=f"Field '{field}' is required.")
