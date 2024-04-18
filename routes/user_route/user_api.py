@@ -3,7 +3,7 @@ import uuid
 from flask import Blueprint, make_response, jsonify, request
 from flask_restful import Api, Resource, reqparse, abort
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_jwt_extended import create_refresh_token, create_access_token
+from flask_jwt_extended import create_refresh_token, create_access_token, jwt_required
 from models import *
 
 userBlueprint = Blueprint("User", __name__, url_prefix="/api/v1/user")
@@ -11,51 +11,62 @@ userApi = Api(userBlueprint)
 
 
 class SignupResource(Resource):
-    """this class does nothing"""
 
     def post(self):
         """function creates Api for signing up the user"""
         required_fields = [
-                "email",
-                "name",
-                "password",
-                "gender",
-                "nid",
-                "phonenumber",
-                "username",
-            ]
+            "email",
+            "name",
+            "password",
+            "gender",
+            "nid",
+            "phonenumber",
+            "username",
+        ]
+
         for field in required_fields:
-                if field not in request.json:
-                    abort(400, message=f"Field '{field}' is required.")
-        try: 
+            if field not in request.json:
+                abort(400, message=f"Field '{field}' is required.")
 
+        email = request.json["email"]
+        name = request.json["name"]
+        password = request.json["password"]
+        gender = request.json["gender"]
+        nid = request.json["nid"]
+        phonenumber = request.json["phonenumber"]
+        username = request.json["username"]
 
-            email = request.json["email"]
-            name = request.json["name"]
-            password = request.json["password"]
-            gender = request.json["gender"]
-            nid = request.json["nid"]
-            phonenumber = request.json["phonenumber"]
-            username = request.json["username"]
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+            abort(400, message="Invalid email format.")
 
-            if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
-                abort(400, message="Invalid email format.")
+        if len(password) < 8:
+            abort(400, message="Password must be at least 8 characters long.")
 
-            if len(password) < 8:
-                abort(400, message="Password must be at least 8 characters long.")
+        if len(nid) != 16:
+            abort(400, message="NID must be exactly 16 characters long.")
 
-            if len(nid) != 16:
-                abort(400, message="NID must be exactly 16 characters long.")
+        if not re.match(r"\+250\d{9}", phonenumber):
+            abort(
+                400,
+                message="Invalid phone number format. It should be in the format: +250700000000",
+            )
 
-            if not re.match(r"\+250\d{9}", phonenumber):
-                abort(
-                    400,
-                    message="Invalid phone number format. It should be in the format: +250700000000",
-                )
+        if User.query.filter_by(Email=email).first():
+            abort(400, message="Email is already in use.")
 
+        if User.query.filter_by(Phonenumber=phonenumber).first():
+            abort(400, message="Phone number is already in use.")
+
+        if User.query.filter_by(NID=nid).first():
+            abort(400, message="NID is already in use.")
+
+        if User.query.filter_by(username=username).first():
+            abort(400, message="Username is already in use.")
+
+        try:
             userid = str(uuid.uuid4())
-
             hashed_password = generate_password_hash(password)
+
             user = User(
                 UserId=userid,
                 password=hashed_password,
@@ -82,38 +93,39 @@ class SignupResource(Resource):
 
 class LoginResource(Resource):
     def post(self):
-        try:
-            required_fields = ["password", "username"]
-            for field in required_fields:
-                if field not in request.json:
-                    abort(400, message=f"Field '{field}' is required.")
 
-            username = request.json["username"]
-            password = request.json["password"]
+        required_fields = ["password", "email"]
+        for field in required_fields:
+            if field not in request.json:
+                abort(400, message=f"Field '{field}' is required.")
 
-            user = User.query.filter_by(username=username).first()
+        email = request.json["email"]
+        password = request.json["password"]
 
-            if not user or not check_password_hash(user.password, password):
-                abort(401, message="Invalid username or password.")
+        user = User.query.filter_by(Email=email).first()
 
-            identity = {
-                "username": user.username,
-                "UserId": user.UserId,
-                "email": user.Email,
-            }
-
-            access_token = create_access_token(identity=identity)
-            refresh_token = create_refresh_token(identity=identity)
-
-            return {
-                "message": "User Logged in successfully.",
-                "access_token": access_token,
-                "refresh_token": refresh_token,
-            }, 200
-
-        except Exception as e:
-            print(e)
+        if not user or not check_password_hash(user.password, password):
             abort(401, message="Invalid username or password.")
+
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+            abort(400, message="Invalid email format.")
+
+        if len(password) < 8:
+            abort(400, message="Password must be at least 8 characters long.")
+
+        identity = {
+            "UserId": user.UserId,
+            "Email": user.Email,
+        }
+
+        access_token = create_access_token(identity=identity)
+        refresh_token = create_refresh_token(identity=identity)
+
+        return {
+            "message": "User Logged in successfully.",
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+        }, 200
 
 
 userApi.add_resource(SignupResource, "/signup")
